@@ -30,4 +30,24 @@ class Item extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the borrowings for the item.
+     */
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class);
+    }
+
+    /**
+     * Check if item is available for borrowing.
+     */
+    public function isAvailable()
+    {
+        $currentBorrowings = $this->borrowings()
+            ->whereIn('status', ['pending', 'approved'])
+            ->count();
+        
+        return $this->stok > $currentBorrowings;
+    }
 }

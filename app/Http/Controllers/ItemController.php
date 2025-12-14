@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ItemController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
     /**
      * Display a listing of all items
      */
@@ -16,7 +23,7 @@ class ItemController extends Controller
     {
         $items = Item::with('user')->orderBy('created_at', 'desc')->get();
         
-        // Format items to include owner information
+        // Format items to include owner information and full image URL
         $items = $items->map(function ($item) {
             return [
                 'id' => $item->id,
@@ -24,10 +31,12 @@ class ItemController extends Controller
                 'stok' => $item->stok,
                 'deskripsi' => $item->deskripsi,
                 'maxHari' => $item->max_hari,
-                'gambar' => $item->gambar,
+                'gambar' => $this->fileUploadService->getFileUrl($item->gambar),
+                'gambar_path' => $item->gambar,
                 'ownerNama' => $item->user->name,
                 'ownerEmail' => $item->user->email,
                 'user_id' => $item->user_id,
+                'isAvailable' => $item->isAvailable(),
                 'created_at' => $item->created_at,
             ];
         });
@@ -78,7 +87,7 @@ class ItemController extends Controller
             'stok' => 'required|integer|min:1',
             'deskripsi' => 'nullable|string',
             'max_hari' => 'required|integer|min:1',
-            'gambar' => 'required|string', // base64 encoded image
+            'gambar' => 'required|image|mimes:jpeg,jpg,png,gif|max:2048', // File upload
         ]);
 
         if ($validator->fails()) {
@@ -89,30 +98,41 @@ class ItemController extends Controller
             ], 422);
         }
 
-        $item = Item::create([
-            'nama' => $request->nama,
-            'stok' => $request->stok,
-            'deskripsi' => $request->deskripsi,
-            'max_hari' => $request->max_hari,
-            'gambar' => $request->gambar,
-            'user_id' => Auth::id(),
-        ]);
+        try {
+            // Upload image
+            $imagePath = $this->fileUploadService->uploadItemImage($request->file('gambar'));
 
-        return response()->json([
-            'success' => true,
-            'message' => '✅ Barang berhasil diupload!',
-            'item' => [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'stok' => $item->stok,
-                'deskripsi' => $item->deskripsi,
-                'maxHari' => $item->max_hari,
-                'gambar' => $item->gambar,
-                'ownerNama' => Auth::user()->name,
-                'ownerEmail' => Auth::user()->email,
-                'user_id' => $item->user_id,
-            ]
-        ], 201);
+            $item = Item::create([
+                'nama' => $request->nama,
+                'stok' => $request->stok,
+                'deskripsi' => $request->deskripsi,
+                'max_hari' => $request->max_hari,
+                'gambar' => $imagePath,
+                'user_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Barang berhasil diupload!',
+                'item' => [
+                    'id' => $item->id,
+                    'nama' => $item->nama,
+                    'stok' => $item->stok,
+                    'deskripsi' => $item->deskripsi,
+                    'maxHari' => $item->max_hari,
+                    'gambar' => $this->fileUploadService->getFileUrl($imagePath),
+                    'gambar_path' => $imagePath,
+                    'ownerNama' => Auth::user()->name,
+                    'ownerEmail' => Auth::user()->email,
+                    'user_id' => $item->user_id,
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupload barang: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -172,7 +192,7 @@ class ItemController extends Controller
             'stok' => 'sometimes|integer|min:0',
             'deskripsi' => 'nullable|string',
             'max_hari' => 'sometimes|integer|min:1',
-            'gambar' => 'sometimes|string',
+            'gambar' => 'sometimes|image|mimes:jpeg,jpg,png,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -183,23 +203,42 @@ class ItemController extends Controller
             ], 422);
         }
 
-        $item->update($request->only(['nama', 'stok', 'deskripsi', 'max_hari', 'gambar']));
+        try {
+            $updateData = $request->only(['nama', 'stok', 'deskripsi', 'max_hari']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Item updated successfully',
-            'item' => [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'stok' => $item->stok,
-                'deskripsi' => $item->deskripsi,
-                'maxHari' => $item->max_hari,
-                'gambar' => $item->gambar,
-                'ownerNama' => Auth::user()->name,
-                'ownerEmail' => Auth::user()->email,
-                'user_id' => $item->user_id,
-            ]
-        ]);
+            // Handle image update
+            if ($request->hasFile('gambar')) {
+                // Delete old image
+                $this->fileUploadService->deleteFile($item->gambar);
+                
+                // Upload new image
+                $updateData['gambar'] = $this->fileUploadService->uploadItemImage($request->file('gambar'));
+            }
+
+            $item->update($updateData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item updated successfully',
+                'item' => [
+                    'id' => $item->id,
+                    'nama' => $item->nama,
+                    'stok' => $item->stok,
+                    'deskripsi' => $item->deskripsi,
+                    'maxHari' => $item->max_hari,
+                    'gambar' => $this->fileUploadService->getFileUrl($item->gambar),
+                    'gambar_path' => $item->gambar,
+                    'ownerNama' => Auth::user()->name,
+                    'ownerEmail' => Auth::user()->email,
+                    'user_id' => $item->user_id,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate barang: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -224,11 +263,61 @@ class ItemController extends Controller
             ], 403);
         }
 
-        $item->delete();
+        try {
+            // Delete image from storage
+            $this->fileUploadService->deleteFile($item->gambar);
+            
+            // Delete item
+            $item->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => '🗑️ Barang berhasil dihapus!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus barang: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Search items by name or description
+     */
+    public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+        
+        $items = Item::with('user')
+            ->where(function($q) use ($query) {
+                $q->where('nama', 'LIKE', "%{$query}%")
+                  ->orWhere('deskripsi', 'LIKE', "%{$query}%");
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $items = $items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'stok' => $item->stok,
+                'deskripsi' => $item->deskripsi,
+                'maxHari' => $item->max_hari,
+                'gambar' => $this->fileUploadService->getFileUrl($item->gambar),
+                'gambar_path' => $item->gambar,
+                'ownerNama' => $item->user->name,
+                'ownerEmail' => $item->user->email,
+                'user_id' => $item->user_id,
+                'isAvailable' => $item->isAvailable(),
+                'created_at' => $item->created_at,
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'message' => '🗑️ Barang berhasil dihapus!'
+            'items' => $items,
+            'query' => $query
         ]);
     }
 }

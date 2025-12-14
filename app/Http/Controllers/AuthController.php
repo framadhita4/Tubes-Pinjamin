@@ -28,6 +28,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'nim' => 'nullable|string|max:50',
+            'role' => 'required|in:peminjam,costumer',
         ]);
 
         if ($validator->fails()) {
@@ -43,6 +44,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'nim' => $request->nim,
+            'role' => $request->role,
         ]);
 
         // Automatically log in the user
@@ -109,6 +111,15 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('message', 'Logout berhasil!');
+        // Clear localStorage as well
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Logout berhasil!',
+                'redirect' => route('login')
+            ]);
+        }
+
+        return redirect()->route('login')->with('message', 'Logout berhasil!');
     }
 }

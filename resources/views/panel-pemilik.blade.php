@@ -1,340 +1,515 @@
 @extends('layouts.app')
 
-@section('title', 'Panel Pemilik')
-
-@section('header-buttons')
-    <h2 style="margin-right: 1rem;">📋 Panel Pemilik</h2>
-    <button class="btn small" onclick="window.location='{{ route('dashboard') }}'">⬅ Dashboard</button>
-    <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-        @csrf
-        <button class="btn small btn-danger" type="submit">Logout</button>
-    </form>
-@endsection
+@section('title', 'Panel Pemilik - PinjamIn')
 
 @section('content')
-    <section style="margin-bottom:12px">
-        <h3>🔔 Notifikasi</h3>
-        <div id="notifArea" class="card muted">Memuat...</div>
-    </section>
-
-    <section class="table-section" style="margin-bottom:12px">
-        <h3>📦 Barang Milik Saya</h3>
-        <div class="table-wrap">
-            <table id="tableMyItems" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>Stok</th>
-                        <th>Max Hari</th>
-                        <th>Deskripsi</th>
-                        <th>Foto</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+    <div class="space-y-6">
+        <!-- Header -->
+        <div>
+            <h1 class="text-3xl font-bold mb-2">Panel Pemilik</h1>
+            <p class="text-base-content/70">Kelola permintaan peminjaman barang Anda</p>
         </div>
-    </section>
 
-    <section class="table-section" style="margin-bottom:12px">
-        <h3>📋 Permintaan Peminjaman</h3>
-        <div class="table-wrap">
-            <table id="tableActive" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>NIM</th>
-                        <th>Barang</th>
-                        <th>Hari</th>
-                        <th>Tanggal</th>
-                        <th>KTM</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="table-section" style="margin-bottom:12px">
-        <h3>🔁 Permintaan Pengembalian</h3>
-        <div class="table-wrap">
-            <table id="tablePendingReturns" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>NIM</th>
-                        <th>Barang</th>
-                        <th>Kondisi</th>
-                        <th>Foto</th>
-                        <th>Tanggal</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="table-section">
-        <h3>📚 Riwayat</h3>
-        <div class="table-wrap">
-            <table id="tableHistory" class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>NIM</th>
-                        <th>Barang</th>
-                        <th>Lama</th>
-                        <th>Tanggal Pinjam</th>
-                        <th>Tanggal Kembali</th>
-                        <th>Kondisi</th>
-                        <th>Foto</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </section>
-
-    <div style="display:flex;justify-content:center;margin-top:12px">
-        <button id="btnOpenUpload" class="btn">+ Upload Barang</button>
-    </div>
-    </main>
-
-    <!-- Modal Upload Barang -->
-    <div id="modalUpload" class="modal">
-        <div class="modal-content">
-            <h3>Upload Barang Baru</h3>
-            <form id="formUploadModal" class="form-grid" onsubmit="event.preventDefault(); uploadItem();">
-                <input id="itemName" placeholder="Nama Barang" required />
-                <input id="itemStok" type="number" min="1" value="1" required />
-                <textarea id="itemDeskripsi" placeholder="Deskripsi" required></textarea>
-                <label>Foto Barang (wajib)</label>
-                <input id="itemFoto" type="file" accept="image/*" required />
-                <label>Max Lama Peminjaman</label>
-                <select id="itemMaxHari" required>
-                    <option value="1">1 Hari</option>
-                    <option value="3">3 Hari</option>
-                    <option value="7">7 Hari</option>
-                    <option value="14">14 Hari</option>
-                    <option value="30">30 Hari</option>
-                </select>
-                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-                    <button class="btn" type="submit">Upload & Simpan</button>
-                    <button class="btn outline" type="button" onclick="closeUploadModal()">Batal</button>
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="stat bg-base-100 shadow rounded-lg">
+                <div class="stat-figure text-warning">
+                    <i data-lucide="clock" class="w-8 h-8"></i>
                 </div>
-            </form>
-        </div>
-    </div>
+                <div class="stat-title">Menunggu Persetujuan</div>
+                <div class="stat-value text-warning" id="pending-count">0</div>
+                <div class="stat-desc">Permintaan baru</div>
+            </div>
 
-    <!-- Modal Foto Preview -->
-    <div id="modalFotoPreview" class="modal">
-        <div class="modal-content">
-            <img id="previewFoto" src="" style="width:100%;border-radius:8px">
-            <div style="text-align:right;margin-top:8px"><button class="btn" onclick="closeFotoPreview()">Tutup</button>
+            <div class="stat bg-base-100 shadow rounded-lg">
+                <div class="stat-figure text-success">
+                    <i data-lucide="check-circle" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Sedang Dipinjam</div>
+                <div class="stat-value text-success" id="approved-count">0</div>
+                <div class="stat-desc">Barang aktif</div>
+            </div>
+
+            <div class="stat bg-base-100 shadow rounded-lg">
+                <div class="stat-figure text-info">
+                    <i data-lucide="rotate-ccw" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Permintaan Kembali</div>
+                <div class="stat-value text-info" id="return-count">0</div>
+                <div class="stat-desc">Menunggu verifikasi</div>
+            </div>
+
+            <div class="stat bg-base-100 shadow rounded-lg">
+                <div class="stat-figure text-base-content">
+                    <i data-lucide="check-check" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Selesai</div>
+                <div class="stat-value" id="completed-count">0</div>
+                <div class="stat-desc">Total riwayat</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div role="tablist" class="tabs tabs-boxed bg-base-100 shadow">
+            <a role="tab" class="tab tab-active" onclick="switchTab('pending')" id="tab-pending">
+                <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                Menunggu Persetujuan
+            </a>
+            <a role="tab" class="tab" onclick="switchTab('approved')" id="tab-approved">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                Sedang Dipinjam
+            </a>
+            <a role="tab" class="tab" onclick="switchTab('return')" id="tab-return">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+                Permintaan Kembali
+            </a>
+            <a role="tab" class="tab" onclick="switchTab('completed')" id="tab-completed">
+                <i data-lucide="archive" class="w-4 h-4 mr-2"></i>
+                Riwayat
+            </a>
+        </div>
+
+        <!-- Content Cards -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <!-- Loading -->
+                <div id="borrowings-loading" class="text-center py-12">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                    <p class="mt-4">Memuat data...</p>
+                </div>
+
+                <!-- Content Container -->
+                <div id="borrowings-content" style="display: none;">
+                    <!-- Pending Requests -->
+                    <div id="content-pending">
+                        <h2 class="text-xl font-bold mb-4">Permintaan Menunggu Persetujuan</h2>
+                        <div id="list-pending" class="space-y-4">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Approved/Active Borrowings -->
+                    <div id="content-approved" style="display: none;">
+                        <h2 class="text-xl font-bold mb-4">Barang Sedang Dipinjam</h2>
+                        <div id="list-approved" class="space-y-4">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Return Requests -->
+                    <div id="content-return" style="display: none;">
+                        <h2 class="text-xl font-bold mb-4">Permintaan Pengembalian</h2>
+                        <div id="list-return" class="space-y-4">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Completed/History -->
+                    <div id="content-completed" style="display: none;">
+                        <h2 class="text-xl font-bold mb-4">Riwayat Peminjaman</h2>
+                        <div id="list-completed" class="space-y-4">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="borrowings-empty" class="text-center py-12" style="display: none;">
+                    <i data-lucide="inbox" class="w-24 h-24 mx-auto text-base-content/20"></i>
+                    <p class="text-lg font-semibold mt-4">Tidak ada data</p>
+                    <p class="text-base-content/70 mt-2">Belum ada permintaan peminjaman untuk kategori ini</p>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Detail Modal -->
+    <dialog id="detail_modal" class="modal">
+        <div class="modal-box max-w-3xl">
+            <h3 class="font-bold text-lg mb-4">Detail Peminjaman</h3>
+            <div id="detail-content">
+                <!-- Will be populated by JS -->
+            </div>
+            <div class="modal-action">
+                <button class="btn" onclick="detail_modal.close()">Tutup</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Approve Confirmation Modal -->
+    <dialog id="approve_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Setujui Peminjaman</h3>
+            <p class="py-4">Apakah Anda yakin ingin menyetujui permintaan peminjaman ini?</p>
+            <div class="alert alert-info">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                <span class="text-sm">Stok barang akan berkurang setelah disetujui</span>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-ghost" onclick="approve_modal.close()">Batal</button>
+                <button class="btn btn-success" onclick="confirmApprove()">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    Setujui
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Reject Modal -->
+    <dialog id="reject_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Tolak Peminjaman</h3>
+            <p class="py-4">Berikan alasan penolakan:</p>
+            <textarea id="reject_reason" class="textarea textarea-bordered w-full h-24"
+                placeholder="Contoh: Barang sedang dalam perbaikan"></textarea>
+            <div class="modal-action">
+                <button class="btn btn-ghost" onclick="reject_modal.close()">Batal</button>
+                <button class="btn btn-error" onclick="confirmReject()">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    Tolak
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Approve Return Modal -->
+    <dialog id="approve_return_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Setujui Pengembalian</h3>
+            <p class="py-4">Apakah kondisi barang sesuai dengan foto yang dikirim?</p>
+            <div class="alert alert-success">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                <span class="text-sm">Stok barang akan bertambah setelah pengembalian disetujui</span>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-ghost" onclick="approve_return_modal.close()">Batal</button>
+                <button class="btn btn-success" onclick="confirmApproveReturn()">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    Setujui Pengembalian
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Image Preview Modal -->
+    <dialog id="image_modal" class="modal">
+        <div class="modal-box max-w-4xl">
+            <h3 class="font-bold text-lg mb-4" id="image-modal-title">Preview Gambar</h3>
+            <div class="flex justify-center">
+                <img id="preview-image" src="" alt="Preview" class="max-h-96 rounded-lg" />
+            </div>
+            <div class="modal-action">
+                <button class="btn" onclick="image_modal.close()">Tutup</button>
+            </div>
+        </div>
+    </dialog>
+
     <script>
-        // Store authenticated user data in localStorage for compatibility with existing JavaScript
-        @auth
-        const authUser = @json(Auth::user());
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('loggedUser', JSON.stringify({
-            nama: authUser.name,
-            email: authUser.email,
-            nim: authUser.nim
-        }));
-        @endauth
+        let allBorrowings = [];
+        let currentTab = 'pending';
+        let actionBorrowingId = null;
 
-        // API Helper Functions
-        async function fetchMyItems() {
-            try {
-                const response = await fetch('{{ route('items.my') }}', {
-                    headers: {
-                        'Accept': 'application/json',
-                    }
-                });
-                const data = await response.json();
-                return data.success ? data.items : [];
-            } catch (error) {
-                console.error('Error fetching items:', error);
-                return [];
-            }
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBorrowings();
 
-        async function deleteItem(id) {
-            try {
-                const response = await fetch(`/api/items/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                });
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Error deleting item:', error);
-                return {
-                    success: false,
-                    message: 'Error deleting item'
-                };
-            }
-        }
-
-        async function createItem(itemData) {
-            try {
-                const response = await fetch('{{ route('items.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(itemData)
-                });
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Error creating item:', error);
-                return {
-                    success: false,
-                    message: 'Error creating item'
-                };
-            }
-        }
-
-        // Render my items table
-        async function renderMyItems() {
-            const tbody = document.querySelector('#tableMyItems tbody');
-            const items = await fetchMyItems();
-
-            if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">Belum ada barang diupload</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = items.map(item => `
-                <tr>
-                    <td>${item.nama}</td>
-                    <td>${item.stok}</td>
-                    <td>${item.maxHari}</td>
-                    <td>${item.deskripsi || '-'}</td>
-                    <td><img src="${item.gambar}" style="max-width:70px;border-radius:6px;cursor:pointer" onclick="openFotoPreview('${item.gambar}')"></td>
-                    <td><button class="btn small danger" onclick="hapusBarangBackend(${item.id})">Hapus</button></td>
-                </tr>
-            `).join('');
-        }
-
-        // Delete item handler
-        window.hapusBarangBackend = async function(id) {
-            if (!confirm('Yakin ingin menghapus barang ini?')) return;
-
-            const result = await deleteItem(id);
-            if (result.success) {
-                alert(result.message);
-                renderMyItems();
-                // Also update localStorage for compatibility
-                let localItems = JSON.parse(localStorage.getItem('items') || '[]');
-                localItems = localItems.filter(item => item.id !== id);
-                localStorage.setItem('items', JSON.stringify(localItems));
-            } else {
-                alert('Gagal menghapus barang: ' + result.message);
-            }
-        };
-
-        // Upload item handler
-        window.uploadItem = function() {
-            const name = document.getElementById('itemName').value.trim();
-            const stok = Number(document.getElementById('itemStok').value) || 0;
-            const deskripsi = document.getElementById('itemDeskripsi').value.trim() || '';
-            const file = document.getElementById('itemFoto').files[0];
-            const maxHari = Number(document.getElementById('itemMaxHari').value) || 7;
-
-            if (!name || stok <= 0 || !file) {
-                alert('Lengkapi nama, stok, dan foto!');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const foto = e.target.result;
-
-                const result = await createItem({
-                    nama: name,
-                    stok: stok,
-                    deskripsi: deskripsi,
-                    max_hari: maxHari,
-                    gambar: foto
-                });
-
-                if (result.success) {
-                    alert(result.message);
-                    closeUploadModal();
-                    renderMyItems();
-
-                    // Also update localStorage for compatibility
-                    let localItems = JSON.parse(localStorage.getItem('items') || '[]');
-                    localItems.push({
-                        id: result.item.id,
-                        nama: result.item.nama,
-                        stok: result.item.stok,
-                        deskripsi: result.item.deskripsi,
-                        maxHari: result.item.maxHari,
-                        gambar: result.item.gambar,
-                        ownerNama: result.item.ownerNama,
-                        ownerEmail: result.item.ownerEmail
-                    });
-                    localStorage.setItem('items', JSON.stringify(localItems));
-                } else {
-                    alert('Gagal mengupload barang: ' + result.message);
+            // Reinitialize icons
+            setTimeout(() => {
+                if (window.lucide && window.lucide.createIcons) {
+                    window.lucide.createIcons();
                 }
-            };
-            reader.readAsDataURL(file);
-        };
+            }, 100);
+        });
 
-        window.closeUploadModal = function() {
-            document.getElementById('modalUpload').style.display = 'none';
-            document.getElementById('formUploadModal').reset();
-        };
+        async function loadBorrowings() {
+            try {
+                const response = await window.fetchRequest('{{ route('borrowings.index') }}', {
+                    method: 'GET'
+                });
 
-        window.openFotoPreview = function(src) {
-            document.getElementById('previewFoto').src = src;
-            document.getElementById('modalFotoPreview').style.display = 'flex';
-        };
+                if (response.success) {
+                    allBorrowings = response.data.data || [];
+                    console.log(allBorrowings);
+                    updateStats();
+                    displayBorrowings();
 
-        window.closeFotoPreview = function() {
-            document.getElementById('modalFotoPreview').style.display = 'none';
-            document.getElementById('previewFoto').src = '';
-        };
+                    document.getElementById('borrowings-loading').style.display = 'none';
+                    document.getElementById('borrowings-content').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading borrowings:', error);
+                document.getElementById('borrowings-loading').style.display = 'none';
+                document.getElementById('borrowings-empty').style.display = 'block';
+            }
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // open upload modal
-            const btnOpen = document.getElementById('btnOpenUpload');
-            btnOpen.addEventListener('click', () => document.getElementById('modalUpload').style.display = 'flex');
+        function updateStats() {
+            const pending = allBorrowings.filter(b => b.status === 'pending').length;
+            const approved = allBorrowings.filter(b => b.status === 'approved').length;
+            const returnRequests = allBorrowings.filter(b => b.status === 'return_requested').length;
+            const completed = allBorrowings.filter(b => b.status === 'returned' || b.status === 'completed').length;
 
-            // close on outside click
-            window.addEventListener('click', (e) => {
-                if (e.target === document.getElementById('modalUpload')) closeUploadModal();
-                if (e.target === document.getElementById('modalFotoPreview')) closeFotoPreview();
+            document.getElementById('pending-count').textContent = pending;
+            document.getElementById('approved-count').textContent = approved;
+            document.getElementById('return-count').textContent = returnRequests;
+            document.getElementById('completed-count').textContent = completed;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update tab active state
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+
+            // Hide all content
+            ['pending', 'approved', 'return', 'completed'].forEach(t => {
+                document.getElementById(`content-${t}`).style.display = 'none';
             });
 
-            // Initial render
-            renderMyItems();
+            // Show selected content
+            document.getElementById(`content-${tab}`).style.display = 'block';
+            displayBorrowings();
+        }
 
-            // If initPanel exists from app.js, call it for other functionality
-            if (typeof initPanel === 'function') initPanel();
-        });
+        function displayBorrowings() {
+            let filtered = [];
 
-        // listen storage updates from other tabs
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'lastUpdate') {
-                renderMyItems();
-                if (typeof renderPanel === 'function') renderPanel();
+            switch (currentTab) {
+                case 'pending':
+                    filtered = allBorrowings.filter(b => b.status === 'pending');
+                    break;
+                case 'approved':
+                    filtered = allBorrowings.filter(b => b.status === 'approved');
+                    break;
+                case 'return':
+                    filtered = allBorrowings.filter(b => b.status === 'return_requested');
+                    break;
+                case 'completed':
+                    filtered = allBorrowings.filter(b => b.status === 'returned' || b.status === 'completed');
+                    break;
             }
-        });
+
+            const listContainer = document.getElementById(`list-${currentTab}`);
+            const emptyState = document.getElementById('borrowings-empty');
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            listContainer.innerHTML = filtered.map(borrowing => {
+                return createBorrowingCard(borrowing);
+            }).join('');
+
+            // Reinitialize icons
+            setTimeout(() => {
+                if (window.lucide && window.lucide.createIcons) {
+                    window.lucide.createIcons();
+                }
+            }, 100);
+        }
+
+        function createBorrowingCard(b) {
+            const statusBadge = {
+                'pending': '<span class="badge badge-warning">Menunggu</span>',
+                'approved': '<span class="badge badge-success">Disetujui</span>',
+                'return_requested': '<span class="badge badge-info">Pengembalian</span>',
+                'returned': '<span class="badge badge-success">Selesai</span>',
+                'rejected': '<span class="badge badge-error">Ditolak</span>',
+                'cancelled': '<span class="badge badge-ghost">Dibatalkan</span>'
+            };
+
+            let actions = '';
+
+            if (b.status === 'pending') {
+                actions = `
+                    <button class="btn btn-sm btn-success" onclick="openApproveModal(${b.id})">
+                        Setujui
+                    </button>
+                    <button class="btn btn-sm btn-error" onclick="openRejectModal(${b.id})">
+                        Tolak
+                    </button>
+                `;
+            } else if (b.status === 'return_requested') {
+                actions = `
+                    <button class="btn btn-sm btn-success" onclick="openApproveReturnModal(${b.id})">
+                        Setujui Pengembalian
+                    </button>
+                `;
+            }
+
+            return `
+                <div class="card bg-base-100 border border-base-300">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg">${b.item?.nama || 'Item'}</h3>
+                                <p class="text-sm text-base-content/70">Peminjam: ${b.peminjam?.name || 'N/A'} (${b.peminjam?.nim || '-'})</p>
+                                <p class="text-sm text-base-content/70">Durasi: ${b.lama_hari || 0} hari</p>
+                                <p class="text-sm text-base-content/70">Tanggal Pinjam: ${formatDate(b.tanggal_pinjam)}</p>
+                                ${b.catatan ? `<p class="text-sm mt-2"><strong>Alasan:</strong> ${b.catatan}</p>` : ''}
+                                ${b.kondisi ? `<p class="text-sm mt-2"><strong>Kondisi saat dikembalikan:</strong> ${b.kondisi}</p>` : ''}
+                            </div>
+                            <div class="text-right">
+                                ${statusBadge[b.status] || ''}
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 mt-4 flex-wrap">
+                            ${b.foto_ktm ? `<button class="btn btn-sm btn-ghost" onclick="showImage('${b.foto_ktm}', 'Foto KTM')">
+                                                                        Lihat KTM
+                                                                    </button>` : ''}
+                            ${b.foto_kondisi ? `<button class="btn btn-sm btn-ghost" onclick="showImage('${b.foto_kondisi}', 'Foto Kondisi')">
+                                                                        Lihat Foto Kondisi
+                                                                    </button>` : ''}
+                            <button class="btn btn-sm btn-ghost" onclick="showDetail(${b.id})">
+                                Detail Lengkap
+                            </button>
+                        </div>
+
+                        ${actions ? `<div class="card-actions justify-end mt-4">${actions}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        function showImage(imagePath, title) {
+            document.getElementById('image-modal-title').textContent = title;
+            document.getElementById('preview-image').src = `/storage/${imagePath}`;
+            image_modal.showModal();
+        }
+
+        function showDetail(id) {
+            const borrowing = allBorrowings.find(b => b.id === id);
+            if (!borrowing) return;
+
+            const detailContent = document.getElementById('detail-content');
+            detailContent.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold">Informasi Barang</h4>
+                        <p>Nama: ${borrowing.item?.nama || '-'}</p>
+                        <p>Deskripsi: ${borrowing.item?.deskripsi || '-'}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Informasi Peminjam</h4>
+                        <p>Nama: ${borrowing.peminjam?.name || '-'}</p>
+                        <p>Email: ${borrowing.peminjam?.email || '-'}</p>
+                        <p>NIM: ${borrowing.peminjam?.nim || '-'}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Detail Peminjaman</h4>
+                        <p>Durasi: ${borrowing.lama_hari} hari</p>
+                        <p>Tanggal Pinjam: ${formatDate(borrowing.tanggal_pinjam)}</p>
+                        <p>Tanggal Kembali: ${formatDate(borrowing.tanggal_kembali)}</p>
+                        ${borrowing.tanggal_pengembalian_aktual ? `<p>Dikembalikan: ${formatDate(borrowing.tanggal_pengembalian_aktual)}</p>` : ''}
+                        <p>Status: ${borrowing.status}</p>
+                        ${borrowing.catatan ? `<p>Alasan: ${borrowing.catatan}</p>` : ''}
+                        ${borrowing.kondisi ? `<p>Kondisi: ${borrowing.kondisi}</p>` : ''}
+                        ${borrowing.alasan_penolakan ? `<p class="text-error">Alasan Penolakan: ${borrowing.alasan_penolakan}</p>` : ''}
+                    </div>
+                </div>
+            `;
+            detail_modal.showModal();
+        }
+
+        function openApproveModal(id) {
+            actionBorrowingId = id;
+            approve_modal.showModal();
+        }
+
+        function openRejectModal(id) {
+            actionBorrowingId = id;
+            document.getElementById('reject_reason').value = '';
+            reject_modal.showModal();
+        }
+
+        function openApproveReturnModal(id) {
+            actionBorrowingId = id;
+            approve_return_modal.showModal();
+        }
+
+        async function confirmApprove() {
+            if (!actionBorrowingId) return;
+
+            try {
+                const response = await window.fetchRequest(
+                    `{{ route('borrowings.approve', '_id_') }}`.replace('_id_', actionBorrowingId), {
+                        method: 'POST'
+                    }
+                );
+
+                if (response.success) {
+                    approve_modal.close();
+                    actionBorrowingId = null;
+                    loadBorrowings();
+                }
+            } catch (error) {
+                console.error('Error approving:', error);
+            }
+        }
+
+        async function confirmReject() {
+            if (!actionBorrowingId) return;
+
+            const reason = document.getElementById('reject_reason').value;
+            if (!reason.trim()) {
+                window.showToast('Alasan penolakan harus diisi', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('alasan_penolakan', reason);
+
+                const response = await window.fetchRequest(
+                    `{{ route('borrowings.reject', '_id_') }}`.replace('_id_', actionBorrowingId), {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+                if (response.success) {
+                    reject_modal.close();
+                    actionBorrowingId = null;
+                    loadBorrowings();
+                }
+            } catch (error) {
+                console.error('Error rejecting:', error);
+            }
+        }
+
+        async function confirmApproveReturn() {
+            if (!actionBorrowingId) return;
+
+            try {
+                const response = await window.fetchRequest(
+                    `{{ route('borrowings.approve-return', '_id_') }}`.replace('_id_', actionBorrowingId), {
+                        method: 'POST'
+                    }
+                );
+
+                if (response.success) {
+                    approve_return_modal.close();
+                    actionBorrowingId = null;
+                    loadBorrowings();
+                }
+            } catch (error) {
+                console.error('Error approving return:', error);
+            }
+        }
     </script>
 @endsection
