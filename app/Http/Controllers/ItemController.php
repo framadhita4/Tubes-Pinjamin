@@ -216,6 +216,7 @@ class ItemController extends Controller
             }
 
             $item->update($updateData);
+            $item->refresh(); // Reload the model from database to get fresh values
 
             return response()->json([
                 'success' => true,

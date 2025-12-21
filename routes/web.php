@@ -79,7 +79,7 @@ Route::middleware(['auth'])->group(function () {
         })->name('my-items');
         
         Route::post('/items', [ItemController::class, 'store'])->name('items.store');
-        Route::put('/items/{id}', [ItemController::class, 'update'])->name('items.update');
+        Route::post('/items/{id}', [ItemController::class, 'update'])->name('items.update');
         Route::delete('/items/{id}', [ItemController::class, 'destroy'])->name('items.destroy');
     });
 

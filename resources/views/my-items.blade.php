@@ -236,7 +236,7 @@
                             <div class="text-sm opacity-50">${item.deskripsi ? item.deskripsi.substring(0, 50) + '...' : '-'}</div>
                         </td>
                         <td>${item.stok}</td>
-                        <td>${item.max_hari} hari</td>
+                        <td>${item.maxHari} hari</td>
                         <td>${statusBadge}</td>
                         <td>
                             <div class="flex gap-2">
@@ -280,7 +280,7 @@
             document.getElementById('edit_nama').value = item.nama;
             document.getElementById('edit_deskripsi').value = item.deskripsi || '';
             document.getElementById('edit_stok').value = item.stok;
-            document.getElementById('edit_max_hari').value = item.max_hari;
+            document.getElementById('edit_max_hari').value = item.maxHari;
 
             edit_modal.showModal();
         }
@@ -290,7 +290,7 @@
 
             const itemId = document.getElementById('edit_item_id').value;
             const formData = new FormData(e.target);
-            formData.append('_method', 'PUT');
+            formData.append('_method', 'POST');
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
             window.setButtonLoading(submitBtn, true, 'Menyimpan...');
@@ -298,7 +298,7 @@
             try {
                 const response = await window.fetchRequest(`{{ route('items.update', '_id_') }}`.replace('_id_',
                     itemId), {
-                    method: 'PUT',
+                    method: 'POST',
                     body: formData
                 });
 
