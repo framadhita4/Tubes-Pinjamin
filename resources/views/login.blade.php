@@ -33,9 +33,9 @@
                         </label>
                         <input type="password" id="loginPassword" name="password" placeholder="••••••••"
                             class="input input-bordered w-full focus:input-primary" required />
-                        <label class="label">
+                        {{-- <label class="label">
                             <a href="#" class="label-text-alt link link-hover link-primary">Lupa password?</a>
-                        </label>
+                        </label> --}}
                     </div>
 
                     <!-- Submit Button -->
