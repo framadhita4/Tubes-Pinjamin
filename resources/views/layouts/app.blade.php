@@ -34,93 +34,129 @@
                 </label>
                 <ul tabindex="0"
                     class="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52">
-                    <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    @if (Auth::user()->role === 'costumer')
-                        <li><a href="{{ route('upload') }}">Upload Barang</a></li>
-                        <li><a href="{{ route('my-items') }}">Barang Saya</a></li>
-                        <li><a href="{{ route('panel-pemilik') }}">Panel Pemilik</a></li>
-                    @endif
+                    @auth
+                        <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        @if (Auth::user()->role === 'peminjam')
+                            <li><a href="{{ route('my-borrowings') }}">Peminjaman Saya</a></li>
+                        @endif
+                        @if (Auth::user()->role === 'costumer')
+                            <li><a href="{{ route('upload') }}">Upload Barang</a></li>
+                            <li><a href="{{ route('my-items') }}">Barang Saya</a></li>
+                            <li><a href="{{ route('panel-pemilik') }}">Panel Pemilik</a></li>
+                        @endif
+                    @else
+                        <li><a href="{{ route('home') }}">Beranda</a></li>
+                        <li><a href="{{ route('login') }}">Login</a></li>
+                        <li><a href="{{ route('register') }}">Daftar</a></li>
+                    @endauth
                 </ul>
             </div>
-            <a href="{{ route('dashboard') }}" class="btn btn-ghost normal-case text-xl">
+            <a href="{{ Auth::check() ? route('dashboard') : route('home') }}"
+                class="btn btn-ghost normal-case text-xl">
                 <span class="text-primary font-bold">PinjamIn</span>
             </a>
         </div>
 
         <div class="navbar-center hidden lg:flex">
             <ul class="menu menu-horizontal px-1">
-                <li><a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                        Dashboard
-                    </a></li>
-                @if (Auth::user()->role === 'costumer')
-                    <li><a href="{{ route('upload') }}" class="{{ request()->routeIs('upload') ? 'active' : '' }}">
-                            <i data-lucide="upload" class="w-4 h-4"></i>
-                            Upload Barang
+                @auth
+                    <li><a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                            Dashboard
                         </a></li>
-                    <li><a href="{{ route('my-items') }}"
-                            class="{{ request()->routeIs('my-items') ? 'active' : '' }}">
-                            <i data-lucide="package" class="w-4 h-4"></i>
-                            Barang Saya
+                    @if (Auth::user()->role === 'peminjam')
+                        <li><a href="{{ route('my-borrowings') }}"
+                                class="{{ request()->routeIs('my-borrowings') ? 'active' : '' }}">
+                                <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                                Peminjaman Saya
+                            </a></li>
+                    @endif
+                    @if (Auth::user()->role === 'costumer')
+                        <li><a href="{{ route('upload') }}" class="{{ request()->routeIs('upload') ? 'active' : '' }}">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                Upload Barang
+                            </a></li>
+                        <li><a href="{{ route('my-items') }}"
+                                class="{{ request()->routeIs('my-items') ? 'active' : '' }}">
+                                <i data-lucide="package" class="w-4 h-4"></i>
+                                Barang Saya
+                            </a></li>
+                        <li><a href="{{ route('panel-pemilik') }}"
+                                class="{{ request()->routeIs('panel-pemilik') ? 'active' : '' }}">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                Panel Pemilik
+                            </a></li>
+                    @endif
+                @else
+                    <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">
+                            <i data-lucide="home" class="w-4 h-4"></i>
+                            Beranda
                         </a></li>
-                    <li><a href="{{ route('panel-pemilik') }}"
-                            class="{{ request()->routeIs('panel-pemilik') ? 'active' : '' }}">
-                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
-                            Panel Pemilik
-                        </a></li>
-                @endif
+                @endauth
             </ul>
         </div>
 
         <div class="navbar-end gap-2">
-            <!-- Notifications -->
-            <div class="dropdown dropdown-end">
-                <label tabindex="0" class="btn btn-ghost btn-circle">
-                    <div class="indicator">
-                        <i data-lucide="bell" class="w-5 h-5"></i>
-                        <span class="badge badge-sm badge-primary indicator-item" id="notif-badge">0</span>
-                    </div>
-                </label>
-                <div tabindex="0" class="mt-3 z-1 card card-compact dropdown-content w-80 bg-base-100 shadow-xl">
-                    <div class="card-body">
-                        <h3 class="font-bold text-lg">Notifikasi</h3>
-                        <div id="notifications-list" class="space-y-2 max-h-96 overflow-y-auto">
-                            <p class="text-sm text-base-content/70">Memuat notifikasi...</p>
+            @auth
+                <!-- Notifications -->
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle">
+                        <div class="indicator">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span class="badge badge-sm badge-primary indicator-item" id="notif-badge">0</span>
                         </div>
-                        <div class="card-actions">
-                            <button class="btn btn-sm btn-ghost btn-block" onclick="markAllNotificationsRead()">
-                                Tandai Semua Dibaca
-                            </button>
+                    </label>
+                    <div tabindex="0" class="mt-3 z-1 card card-compact dropdown-content w-80 bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h3 class="font-bold text-lg">Notifikasi</h3>
+                            <div id="notifications-list" class="space-y-2 max-h-96 overflow-y-auto">
+                                <p class="text-sm text-base-content/70">Memuat notifikasi...</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-ghost btn-block" onclick="markAllNotificationsRead()">
+                                    Tandai Semua Dibaca
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- User Menu -->
-            <div class="dropdown dropdown-end">
-                <label tabindex="0" class="btn btn-ghost btn-circle avatar placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-10 flex items-center justify-center">
-                        <span class="text-xl">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
-                    </div>
-                </label>
-                <ul tabindex="0"
-                    class="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52">
-                    <li class="menu-title">
-                        <span>{{ Auth::user()->name }}</span>
-                        <span class="badge badge-sm">{{ ucfirst(Auth::user()->role) }}</span>
-                    </li>
-                    <li><a href="{{ route('dashboard') }}">
-                            <i data-lucide="user" class="w-4 h-4"></i>
-                            Dashboard
-                        </a></li>
-                    <li>
-                        <a href="#" onclick="handleLogout(event)">
-                            <i data-lucide="log-out" class="w-4 h-4"></i>
-                            Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+                <!-- User Menu -->
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle avatar placeholder">
+                        <div class="bg-primary text-primary-content rounded-full w-10 flex items-center justify-center">
+                            <span class="text-xl">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                        </div>
+                    </label>
+                    <ul tabindex="0"
+                        class="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow bg-base-100 rounded-box w-52">
+                        <li class="menu-title">
+                            <span>{{ Auth::user()->name }}</span>
+                            <span class="badge badge-sm">{{ ucfirst(Auth::user()->role) }}</span>
+                        </li>
+                        <li><a href="{{ route('dashboard') }}">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                Dashboard
+                            </a></li>
+                        <li>
+                            <a href="#" onclick="handleLogout(event)">
+                                <i data-lucide="log-out" class="w-4 h-4"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            @else
+                <!-- Guest Buttons -->
+                <a href="{{ route('login') }}" class="btn btn-ghost">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    Login
+                </a>
+                <a href="{{ route('register') }}" class="btn btn-primary">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    Daftar
+                </a>
+            @endauth
         </div>
     </div>
 
@@ -149,6 +185,7 @@
 
     <!-- Global Scripts -->
     <script>
+        @auth
         // Handle logout
         async function handleLogout(event) {
             event.preventDefault();
@@ -244,6 +281,7 @@
                 console.error('Error marking all notifications as read:', error);
             }
         }
+        @endauth
     </script>
 
     @stack('scripts')

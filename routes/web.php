@@ -29,6 +29,13 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
+    // My Borrowings (Peminjam only)
+    Route::middleware('role:peminjam')->group(function () {
+        Route::get('/my-borrowings', function () {
+            return view('my-borrowings');
+        })->name('my-borrowings');
+    });
+
     // Borrowing Routes
     Route::prefix('borrowings')->group(function () {
         Route::get('/', [BorrowingController::class, 'index'])->name('borrowings.index');

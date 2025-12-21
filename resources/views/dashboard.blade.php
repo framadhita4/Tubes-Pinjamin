@@ -224,9 +224,11 @@
 
                 return `
                     <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-                        <figure class="h-48 overflow-hidden">
-                            <img src="${item.gambar}" alt="${item.nama}" class="w-full h-full object-cover" />
-                        </figure>
+                        <a href="${item.gambar}" target="_blank">
+                            <figure class="h-48 overflow-hidden">
+                                <img src="${item.gambar}" alt="${item.nama}" class="w-full h-full object-cover" />
+                            </figure>
+                        </a>
                         <div class="card-body">
                             <h2 class="card-title">
                                 ${item.nama}
@@ -246,9 +248,9 @@
                                     '<button class="btn btn-sm btn-ghost" disabled>Barang Anda</button>' :
                                     isAvailable ?
                                     `<button class="btn btn-sm btn-primary" onclick="openBorrowingModal(${item.id})">
-                                                                                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                                                                                        Pinjam
-                                                                                                    </button>` :
+                                                                                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                                                                                                Pinjam
+                                                                                                            </button>` :
                                     '<button class="btn btn-sm btn-disabled">Stok Habis</button>'
                                 }
                             </div>

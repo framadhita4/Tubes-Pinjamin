@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Panel Pemilik - PinjamIn')
+@section('title', 'Peminjaman Saya - PinjamIn')
 
 @section('content')
     <div class="space-y-6">
         <!-- Header -->
         <div>
-            <h1 class="text-3xl font-bold mb-2">Panel Pemilik</h1>
-            <p class="text-base-content/70">Kelola permintaan peminjaman barang Anda</p>
+            <h1 class="text-3xl font-bold mb-2">Peminjaman Saya</h1>
+            <p class="text-base-content/70">Kelola peminjaman dan pengembalian barang Anda</p>
         </div>
 
         <!-- Stats -->
@@ -26,7 +26,7 @@
                     <i data-lucide="check-circle" class="w-8 h-8"></i>
                 </div>
                 <div class="stat-title">Sedang Dipinjam</div>
-                <div class="stat-value text-success" id="approved-count">0</div>
+                <div class="stat-value text-success" id="active-count">0</div>
                 <div class="stat-desc">Barang aktif</div>
             </div>
 
@@ -34,14 +34,14 @@
                 <div class="stat-figure text-info">
                     <i data-lucide="rotate-ccw" class="w-8 h-8"></i>
                 </div>
-                <div class="stat-title">Permintaan Kembali</div>
-                <div class="stat-value text-info" id="return-count">0</div>
-                <div class="stat-desc">Menunggu verifikasi</div>
+                <div class="stat-title">Menunggu Verifikasi</div>
+                <div class="stat-value text-info" id="return-pending-count">0</div>
+                <div class="stat-desc">Pengembalian</div>
             </div>
 
             <div class="stat bg-base-100 shadow rounded-lg">
                 <div class="stat-figure text-base-content">
-                    <i data-lucide="check-check" class="w-8 h-8"></i>
+                    <i data-lucide="archive" class="w-8 h-8"></i>
                 </div>
                 <div class="stat-title">Selesai</div>
                 <div class="stat-value" id="completed-count">0</div>
@@ -56,20 +56,20 @@
                 Menunggu Persetujuan
                 <span class="badge badge-sm ml-2" id="tab-badge-pending">0</span>
             </a>
-            <a role="tab" class="tab" onclick="switchTab('approved')" id="tab-approved">
+            <a role="tab" class="tab" onclick="switchTab('active')" id="tab-active">
                 <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
                 Sedang Dipinjam
-                <span class="badge badge-sm ml-2" id="tab-badge-approved">0</span>
+                <span class="badge badge-sm ml-2" id="tab-badge-active">0</span>
             </a>
-            <a role="tab" class="tab" onclick="switchTab('return')" id="tab-return">
+            <a role="tab" class="tab" onclick="switchTab('return-pending')" id="tab-return-pending">
                 <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
-                Permintaan Kembali
-                <span class="badge badge-sm ml-2" id="tab-badge-return">0</span>
+                Menunggu Verifikasi
+                <span class="badge badge-sm ml-2" id="tab-badge-return-pending">0</span>
             </a>
-            <a role="tab" class="tab" onclick="switchTab('completed')" id="tab-completed">
+            <a role="tab" class="tab" onclick="switchTab('history')" id="tab-history">
                 <i data-lucide="archive" class="w-4 h-4 mr-2"></i>
                 Riwayat
-                <span class="badge badge-sm ml-2" id="tab-badge-completed">0</span>
+                <span class="badge badge-sm ml-2" id="tab-badge-history">0</span>
             </a>
         </div>
 
@@ -92,26 +92,26 @@
                         </div>
                     </div>
 
-                    <!-- Approved/Active Borrowings -->
-                    <div id="content-approved" style="display: none;">
+                    <!-- Active Borrowings -->
+                    <div id="content-active" style="display: none;">
                         <h2 class="text-xl font-bold mb-4">Barang Sedang Dipinjam</h2>
-                        <div id="list-approved" class="space-y-4">
+                        <div id="list-active" class="space-y-4">
                             <!-- Will be populated by JS -->
                         </div>
                     </div>
 
-                    <!-- Return Requests -->
-                    <div id="content-return" style="display: none;">
-                        <h2 class="text-xl font-bold mb-4">Permintaan Pengembalian</h2>
-                        <div id="list-return" class="space-y-4">
+                    <!-- Return Pending -->
+                    <div id="content-return-pending" style="display: none;">
+                        <h2 class="text-xl font-bold mb-4">Menunggu Verifikasi Pengembalian</h2>
+                        <div id="list-return-pending" class="space-y-4">
                             <!-- Will be populated by JS -->
                         </div>
                     </div>
 
-                    <!-- Completed/History -->
-                    <div id="content-completed" style="display: none;">
+                    <!-- History -->
+                    <div id="content-history" style="display: none;">
                         <h2 class="text-xl font-bold mb-4">Riwayat Peminjaman</h2>
-                        <div id="list-completed" class="space-y-4">
+                        <div id="list-history" class="space-y-4">
                             <!-- Will be populated by JS -->
                         </div>
                     </div>
@@ -121,11 +121,104 @@
                 <div id="borrowings-empty" class="text-center py-12" style="display: none;">
                     <i data-lucide="inbox" class="w-24 h-24 mx-auto text-base-content/20"></i>
                     <p class="text-lg font-semibold mt-4">Tidak ada data</p>
-                    <p class="text-base-content/70 mt-2">Belum ada permintaan peminjaman untuk kategori ini</p>
+                    <p class="text-base-content/70 mt-2">Belum ada peminjaman untuk kategori ini</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Return Request Modal -->
+    <dialog id="return_modal" class="modal">
+        <div class="modal-box max-w-2xl">
+            <h3 class="font-bold text-lg mb-4">Form Pengembalian Barang</h3>
+            <form id="returnForm" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" id="return_borrowing_id">
+
+                <div class="space-y-4">
+                    <!-- Item Info -->
+                    <div class="alert alert-info">
+                        <i data-lucide="info" class="w-6 h-6"></i>
+                        <div>
+                            <h4 class="font-bold" id="return-item-name"></h4>
+                            <p class="text-sm" id="return-item-owner"></p>
+                        </div>
+                    </div>
+
+                    <!-- Condition Description -->
+                    <div class="form-control flex flex-col">
+                        <label class="label">
+                            <span class="label-text font-medium">Kondisi Barang</span>
+                            <span class="label-text-alt text-error">*Wajib</span>
+                        </label>
+                        <textarea name="kondisi" id="kondisi" class="textarea textarea-bordered h-24 w-full"
+                            placeholder="Jelaskan kondisi barang saat dikembalikan..." required></textarea>
+                        <label class="label">
+                            <span class="label-text-alt">Contoh: Barang dalam kondisi baik, tidak ada kerusakan</span>
+                        </label>
+                    </div>
+
+                    <!-- Condition Photo Upload -->
+                    <div class="form-control flex flex-col">
+                        <label class="label">
+                            <span class="label-text font-medium">Upload Foto Kondisi Barang</span>
+                            <span class="label-text-alt text-error">*Wajib</span>
+                        </label>
+                        <input type="file" name="foto_kondisi" id="foto_kondisi" accept="image/*"
+                            class="file-input file-input-bordered w-full" required />
+                        <label class="label">
+                            <span class="label-text-alt">Maksimal 2MB (JPG, PNG). Foto untuk verifikasi kondisi</span>
+                        </label>
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="photo-preview" class="hidden">
+                        <label class="label">
+                            <span class="label-text font-medium">Preview Foto</span>
+                        </label>
+                        <img id="preview-img" src="" alt="Preview" class="max-h-48 rounded-lg" />
+                    </div>
+
+                    <!-- Warning -->
+                    <div class="alert alert-warning">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        <span class="text-sm">Pastikan foto dan deskripsi kondisi sesuai dengan kondisi barang yang
+                            sebenarnya. Pemilik akan memverifikasi sebelum pengembalian disetujui.</span>
+                    </div>
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" class="btn btn-ghost" onclick="return_modal.close()">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                        Kirim Permintaan
+                    </button>
+                </div>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <!-- Cancel Confirmation Modal -->
+    <dialog id="cancel_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Batalkan Peminjaman</h3>
+            <p class="py-4">Apakah Anda yakin ingin membatalkan permintaan peminjaman ini?</p>
+            <div class="alert alert-warning">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                <span class="text-sm">Tindakan ini tidak dapat dibatalkan</span>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-ghost" onclick="cancel_modal.close()">Tidak</button>
+                <button class="btn btn-error" onclick="confirmCancel()">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    Ya, Batalkan
+                </button>
+            </div>
+        </div>
+    </dialog>
 
     <!-- Detail Modal -->
     <dialog id="detail_modal" class="modal">
@@ -136,61 +229,6 @@
             </div>
             <div class="modal-action">
                 <button class="btn" onclick="detail_modal.close()">Tutup</button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- Approve Confirmation Modal -->
-    <dialog id="approve_modal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg">Setujui Peminjaman</h3>
-            <p class="py-4">Apakah Anda yakin ingin menyetujui permintaan peminjaman ini?</p>
-            <div class="alert alert-info">
-                <i data-lucide="info" class="w-5 h-5"></i>
-                <span class="text-sm">Stok barang akan berkurang setelah disetujui</span>
-            </div>
-            <div class="modal-action">
-                <button class="btn btn-ghost" onclick="approve_modal.close()">Batal</button>
-                <button class="btn btn-success" onclick="confirmApprove()">
-                    <i data-lucide="check" class="w-5 h-5"></i>
-                    Setujui
-                </button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- Reject Modal -->
-    <dialog id="reject_modal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg">Tolak Peminjaman</h3>
-            <p class="py-4">Berikan alasan penolakan:</p>
-            <textarea id="reject_reason" class="textarea textarea-bordered w-full h-24"
-                placeholder="Contoh: Barang sedang dalam perbaikan"></textarea>
-            <div class="modal-action">
-                <button class="btn btn-ghost" onclick="reject_modal.close()">Batal</button>
-                <button class="btn btn-error" onclick="confirmReject()">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                    Tolak
-                </button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- Approve Return Modal -->
-    <dialog id="approve_return_modal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg">Setujui Pengembalian</h3>
-            <p class="py-4">Apakah kondisi barang sesuai dengan foto yang dikirim?</p>
-            <div class="alert alert-success">
-                <i data-lucide="info" class="w-5 h-5"></i>
-                <span class="text-sm">Stok barang akan bertambah setelah pengembalian disetujui</span>
-            </div>
-            <div class="modal-action">
-                <button class="btn btn-ghost" onclick="approve_return_modal.close()">Batal</button>
-                <button class="btn btn-success" onclick="confirmApproveReturn()">
-                    <i data-lucide="check" class="w-5 h-5"></i>
-                    Setujui Pengembalian
-                </button>
             </div>
         </div>
     </dialog>
@@ -216,6 +254,22 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadBorrowings();
 
+            // Handle return form submission
+            document.getElementById('returnForm').addEventListener('submit', handleReturnSubmit);
+
+            // Photo preview
+            document.getElementById('foto_kondisi').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('preview-img').src = e.target.result;
+                        document.getElementById('photo-preview').classList.remove('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
             // Reinitialize icons
             setTimeout(() => {
                 if (window.lucide && window.lucide.createIcons) {
@@ -231,8 +285,8 @@
                 });
 
                 if (response.success) {
-                    allBorrowings = response.data.data || [];
-                    console.log(allBorrowings);
+                    allBorrowings = response.data.data || response.data || [];
+                    console.log('Loaded borrowings:', allBorrowings);
                     updateStats();
                     displayBorrowings();
 
@@ -248,21 +302,22 @@
 
         function updateStats() {
             const pending = allBorrowings.filter(b => b.status === 'pending').length;
-            const approved = allBorrowings.filter(b => b.status === 'approved').length;
-            const returnRequests = allBorrowings.filter(b => b.status === 'return_pending').length;
-            const completed = allBorrowings.filter(b => ['returned', 'rejected', 'cancelled'].includes(b.status)).length;
+            const active = allBorrowings.filter(b => b.status === 'approved').length;
+            const returnPending = allBorrowings.filter(b => b.status === 'return_pending').length;
+            const completed = allBorrowings.filter(b => ['returned', 'rejected', 'cancelled'].includes(b.status))
+                .length;
 
             // Update stat cards
             document.getElementById('pending-count').textContent = pending;
-            document.getElementById('approved-count').textContent = approved;
-            document.getElementById('return-count').textContent = returnRequests;
+            document.getElementById('active-count').textContent = active;
+            document.getElementById('return-pending-count').textContent = returnPending;
             document.getElementById('completed-count').textContent = completed;
 
             // Update tab badges
             document.getElementById('tab-badge-pending').textContent = pending;
-            document.getElementById('tab-badge-approved').textContent = approved;
-            document.getElementById('tab-badge-return').textContent = returnRequests;
-            document.getElementById('tab-badge-completed').textContent = completed;
+            document.getElementById('tab-badge-active').textContent = active;
+            document.getElementById('tab-badge-return-pending').textContent = returnPending;
+            document.getElementById('tab-badge-history').textContent = completed;
         }
 
         function switchTab(tab) {
@@ -273,7 +328,7 @@
             document.getElementById(`tab-${tab}`).classList.add('tab-active');
 
             // Hide all content
-            ['pending', 'approved', 'return', 'completed'].forEach(t => {
+            ['pending', 'active', 'return-pending', 'history'].forEach(t => {
                 document.getElementById(`content-${t}`).style.display = 'none';
             });
 
@@ -289,13 +344,13 @@
                 case 'pending':
                     filtered = allBorrowings.filter(b => b.status === 'pending');
                     break;
-                case 'approved':
+                case 'active':
                     filtered = allBorrowings.filter(b => b.status === 'approved');
                     break;
-                case 'return':
+                case 'return-pending':
                     filtered = allBorrowings.filter(b => b.status === 'return_pending');
                     break;
-                case 'completed':
+                case 'history':
                     filtered = allBorrowings.filter(b => ['returned', 'rejected', 'cancelled'].includes(b.status));
                     break;
             }
@@ -325,47 +380,52 @@
 
         function createBorrowingCard(b) {
             const statusBadge = {
-                'pending': '<span class="badge badge-warning">Menunggu</span>',
+                'pending': '<span class="badge badge-warning">Menunggu Persetujuan</span>',
                 'approved': '<span class="badge badge-success">Disetujui</span>',
-                'return_pending': '<span class="badge badge-info">Pengembalian</span>',
+                'return_pending': '<span class="badge badge-info">Menunggu Verifikasi</span>',
                 'returned': '<span class="badge badge-success">Selesai</span>',
                 'rejected': '<span class="badge badge-error">Ditolak</span>',
                 'cancelled': '<span class="badge badge-ghost">Dibatalkan</span>'
             };
 
+            // Check if overdue
+            const returnDate = new Date(b.tanggal_kembali);
+            const today = new Date();
+            const isOverdue = b.status === 'approved' && returnDate < today;
+            const daysLate = isOverdue ? Math.floor((today - returnDate) / (1000 * 60 * 60 * 24)) : 0;
+
             let actions = '';
 
             if (b.status === 'pending') {
                 actions = `
-                    <button class="btn btn-sm btn-success" onclick="openApproveModal(${b.id})">
-                        <i data-lucide="check" class="w-4 h-4"></i>
-                        Setujui
-                    </button>
-                    <button class="btn btn-sm btn-error" onclick="openRejectModal(${b.id})">
+                    <button class="btn btn-sm btn-error" onclick="openCancelModal(${b.id})">
                         <i data-lucide="x" class="w-4 h-4"></i>
-                        Tolak
+                        Batalkan
                     </button>
                 `;
-            } else if (b.status === 'return_pending') {
+            } else if (b.status === 'approved') {
                 actions = `
-                    <button class="btn btn-sm btn-success" onclick="openApproveReturnModal(${b.id})">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i>
-                        Setujui Pengembalian
+                    <button class="btn btn-sm btn-primary" onclick="openReturnModal(${b.id})">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        Ajukan Pengembalian
                     </button>
                 `;
             }
 
             return `
-                <div class="card bg-base-100 border border-base-300">
+                <div class="card bg-base-100 border ${isOverdue ? 'border-error' : 'border-base-300'}">
                     <div class="card-body">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <h3 class="font-bold text-lg">${b.item?.nama || 'Item'}</h3>
-                                <p class="text-sm text-base-content/70">Peminjam: ${b.peminjam?.name || 'N/A'} (${b.peminjam?.nim || '-'})</p>
+                                <p class="text-sm text-base-content/70">Pemilik: ${b.item?.user?.name || b.item?.ownerNama || 'N/A'}</p>
                                 <p class="text-sm text-base-content/70">Durasi: ${b.lama_hari || 0} hari</p>
                                 <p class="text-sm text-base-content/70">Tanggal Pinjam: ${formatDate(b.tanggal_pinjam)}</p>
-                                ${b.catatan ? `<p class="text-sm mt-2"><strong>Alasan:</strong> ${b.catatan}</p>` : ''}
-                                ${b.kondisi ? `<p class="text-sm mt-2"><strong>Kondisi saat dikembalikan:</strong> ${b.kondisi}</p>` : ''}
+                                <p class="text-sm text-base-content/70">Tanggal Kembali: ${formatDate(b.tanggal_kembali)}</p>
+                                ${isOverdue ? `<p class="text-sm text-error font-semibold mt-2">⚠️ Terlambat ${daysLate} hari!</p>` : ''}
+                                ${b.catatan ? `<p class="text-sm mt-2"><strong>Catatan:</strong> ${b.catatan}</p>` : ''}
+                                ${b.kondisi ? `<p class="text-sm mt-2"><strong>Kondisi:</strong> ${b.kondisi}</p>` : ''}
+                                ${b.alasan_penolakan ? `<p class="text-sm mt-2 text-error"><strong>Alasan Penolakan:</strong> ${b.alasan_penolakan}</p>` : ''}
                             </div>
                             <div class="text-right">
                                 ${statusBadge[b.status] || ''}
@@ -374,13 +434,16 @@
 
                         <div class="flex gap-2 mt-4 flex-wrap">
                             ${b.foto_ktm ? `<button class="btn btn-sm btn-ghost" onclick="showImage('${b.foto_ktm}', 'Foto KTM')">
-                                                                                        Lihat KTM
-                                                                                    </button>` : ''}
+                                                <i data-lucide="image" class="w-4 h-4"></i>
+                                                Lihat KTM
+                                            </button>` : ''}
                             ${b.foto_kondisi ? `<button class="btn btn-sm btn-ghost" onclick="showImage('${b.foto_kondisi}', 'Foto Kondisi')">
-                                                                                        Lihat Foto Kondisi
-                                                                                    </button>` : ''}
+                                                <i data-lucide="image" class="w-4 h-4"></i>
+                                                Lihat Foto Kondisi
+                                            </button>` : ''}
                             <button class="btn btn-sm btn-ghost" onclick="showDetail(${b.id})">
-                                Detail Lengkap
+                                <i data-lucide="info" class="w-4 h-4"></i>
+                                Detail
                             </button>
                         </div>
 
@@ -419,10 +482,9 @@
                         <p>Deskripsi: ${borrowing.item?.deskripsi || '-'}</p>
                     </div>
                     <div>
-                        <h4 class="font-semibold">Informasi Peminjam</h4>
-                        <p>Nama: ${borrowing.peminjam?.name || '-'}</p>
-                        <p>Email: ${borrowing.peminjam?.email || '-'}</p>
-                        <p>NIM: ${borrowing.peminjam?.nim || '-'}</p>
+                        <h4 class="font-semibold">Informasi Pemilik</h4>
+                        <p>Nama: ${borrowing.item?.user?.name || borrowing.item?.ownerNama || '-'}</p>
+                        <p>Email: ${borrowing.item?.user?.email || '-'}</p>
                     </div>
                     <div>
                         <h4 class="font-semibold">Detail Peminjaman</h4>
@@ -431,98 +493,94 @@
                         <p>Tanggal Kembali: ${formatDate(borrowing.tanggal_kembali)}</p>
                         ${borrowing.tanggal_pengembalian_aktual ? `<p>Dikembalikan: ${formatDate(borrowing.tanggal_pengembalian_aktual)}</p>` : ''}
                         <p>Status: ${borrowing.status}</p>
-                        ${borrowing.catatan ? `<p>Alasan: ${borrowing.catatan}</p>` : ''}
+                        ${borrowing.catatan ? `<p>Catatan: ${borrowing.catatan}</p>` : ''}
                         ${borrowing.kondisi ? `<p>Kondisi: ${borrowing.kondisi}</p>` : ''}
                         ${borrowing.alasan_penolakan ? `<p class="text-error">Alasan Penolakan: ${borrowing.alasan_penolakan}</p>` : ''}
+                        ${borrowing.rating ? `<p>Rating: ${borrowing.rating}/5</p>` : ''}
                     </div>
                 </div>
             `;
             detail_modal.showModal();
         }
 
-        function openApproveModal(id) {
+        function openReturnModal(id) {
+            const borrowing = allBorrowings.find(b => b.id === id);
+            if (!borrowing) return;
+
             actionBorrowingId = id;
-            approve_modal.showModal();
+            document.getElementById('return_borrowing_id').value = id;
+            document.getElementById('return-item-name').textContent = borrowing.item?.nama || 'Item';
+            document.getElementById('return-item-owner').textContent =
+                `Pemilik: ${borrowing.item?.user?.name || borrowing.item?.ownerNama || 'N/A'}`;
+
+            // Reset form
+            document.getElementById('returnForm').reset();
+            document.getElementById('photo-preview').classList.add('hidden');
+
+            return_modal.showModal();
         }
 
-        function openRejectModal(id) {
+        function openCancelModal(id) {
             actionBorrowingId = id;
-            document.getElementById('reject_reason').value = '';
-            reject_modal.showModal();
+            cancel_modal.showModal();
         }
 
-        function openApproveReturnModal(id) {
-            actionBorrowingId = id;
-            approve_return_modal.showModal();
-        }
+        async function handleReturnSubmit(e) {
+            e.preventDefault();
 
-        async function confirmApprove() {
-            if (!actionBorrowingId) return;
+            const borrowingId = document.getElementById('return_borrowing_id').value;
+            if (!borrowingId) return;
+
+            const formData = new FormData(e.target);
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            window.setButtonLoading(submitBtn, true, 'Mengirim...');
 
             try {
                 const response = await window.fetchRequest(
-                    `{{ route('borrowings.approve', '_id_') }}`.replace('_id_', actionBorrowingId), {
-                        method: 'POST'
-                    }
-                );
-
-                if (response.success) {
-                    approve_modal.close();
-                    actionBorrowingId = null;
-                    loadBorrowings();
-                }
-            } catch (error) {
-                console.error('Error approving:', error);
-            }
-        }
-
-        async function confirmReject() {
-            if (!actionBorrowingId) return;
-
-            const reason = document.getElementById('reject_reason').value;
-            if (!reason.trim()) {
-                window.showToast('Alasan penolakan harus diisi', 'error');
-                return;
-            }
-
-            try {
-                const formData = new FormData();
-                formData.append('alasan_penolakan', reason);
-
-                const response = await window.fetchRequest(
-                    `{{ route('borrowings.reject', '_id_') }}`.replace('_id_', actionBorrowingId), {
+                    `{{ route('borrowings.return', '_id_') }}`.replace('_id_', borrowingId), {
                         method: 'POST',
                         body: formData
                     }
                 );
 
                 if (response.success) {
-                    reject_modal.close();
+                    window.showToast(response.message || 'Permintaan pengembalian berhasil dikirim', 'success');
+                    return_modal.close();
                     actionBorrowingId = null;
                     loadBorrowings();
+                } else {
+                    window.showToast(response.message || 'Gagal mengirim permintaan', 'error');
                 }
             } catch (error) {
-                console.error('Error rejecting:', error);
+                console.error('Error submitting return:', error);
+                window.showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                window.setButtonLoading(submitBtn, false);
             }
         }
 
-        async function confirmApproveReturn() {
+        async function confirmCancel() {
             if (!actionBorrowingId) return;
 
             try {
                 const response = await window.fetchRequest(
-                    `{{ route('borrowings.approve-return', '_id_') }}`.replace('_id_', actionBorrowingId), {
+                    `{{ route('borrowings.cancel', '_id_') }}`.replace('_id_', actionBorrowingId), {
                         method: 'POST'
                     }
                 );
 
                 if (response.success) {
-                    approve_return_modal.close();
+                    window.showToast(response.message || 'Permintaan berhasil dibatalkan', 'success');
+                    cancel_modal.close();
                     actionBorrowingId = null;
                     loadBorrowings();
+                } else {
+                    window.showToast(response.message || 'Gagal membatalkan permintaan', 'error');
                 }
             } catch (error) {
-                console.error('Error approving return:', error);
+                console.error('Error canceling:', error);
+                window.showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
             }
         }
     </script>
